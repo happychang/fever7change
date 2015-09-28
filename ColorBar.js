@@ -1,6 +1,8 @@
 function ColorBar(value, area) {
     density = value / area / 10000;
-    if (density <= -256)
+    if (value <= 4 && value >= -4)
+        return "#FFFF00"
+    else if (density <= -256)
         return "#00bfff"
     else if (density <= -64)
         return "#87cefa"
@@ -9,7 +11,7 @@ function ColorBar(value, area) {
     else if (density <= -4)
         return "#00FF00"
     else if (density < 4)
-        return "#FFFF00"
+        return "#ffd700"
     else if (density < 16)
         return "#FF8C00"
     else if (density < 64)
