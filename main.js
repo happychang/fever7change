@@ -3,6 +3,8 @@
 var map,
         currentPlayIndex = false,
         cunli;
+var latestTime = 0;
+var day1 = 78400000*7;
 
 $.getJSON('http://happychang.github.io/fever-data/Dengue.json', function (data) {
     DengueTW = data;
@@ -22,9 +24,8 @@ function initialize() {
     });
 
     var areas = [];
-    var today = new Date().getTime();
-    var days = 78400000*30;
 
+/* check the lastest record */
     cunli.forEach(function (value) {
         var key = value.getProperty('VILLAGE_ID'),
                 countyId = value.getProperty('COUNTY_ID'),
@@ -33,15 +34,41 @@ function initialize() {
 		
         if (DengueTW[key]) {
             DengueTW[key].forEach(function (val) {
-                var recdate = new Date(val[0]).getTime();
-		if( today - recdate < days )
+                var rectime = new Date(val[0]).getTime();
+		if( latestTime < rectime )
                 {
-                count += val[1];
+                    latestTime = rectime;
                 }
             });
         }
+    });
 
-        value.setProperty('num', count); 
+    var day1 = latestTime - 78400000*7;
+    var day2 = latestTime - 78400000*14;
+
+    cunli.forEach(function (value) {
+        var key = value.getProperty('VILLAGE_ID'),
+                countyId = value.getProperty('COUNTY_ID'),
+                townId = value.getProperty('TOWN_ID'),
+                count = 0;
+	var count1=0, count2=0;
+		
+        if (DengueTW[key]) {
+            DengueTW[key].forEach(function (val) {
+                var recdate = new Date(val[0]).getTime();
+		if( recdate > day1 )
+                {
+                    count1 += val[1];
+                }
+		else if( recdate > day2 )
+		{
+                    count2 += val[1];
+		}
+            });
+        }
+        value.setProperty('num', count1 - count2); 
+	value.setProperty('sum', count1 + count2); 
+
     
         if(countyId.length === 2) {
             countyId += '000';
@@ -83,7 +110,14 @@ function initialize() {
 
     map.data.setStyle(function (feature) {
 
-	color = ColorBar(feature.getProperty('num'), feature.getProperty('Shape_Area')); 
+        if( feature.getProperty('sum') == 0 )
+	{ 
+	    color = "white";
+        }
+	else
+        {
+	    color = ColorBar(feature.getProperty('num'), feature.getProperty('Shape_Area')); 
+	}
         
         return {
             fillColor: color,
@@ -231,22 +265,34 @@ function showDateMap(clickedDate, cunli) {
             dd = clickedDate.getDate().toString(),
             clickedDateKey = yyyy + '-' + (mm[1] ? mm : '0' + mm[0]) + '-' + (dd[1] ? dd : '0' + dd[0]);
 
-    var days = 78400000*30;
+    var day0 = clickedDate.getTime();
+    var day1 = day0 - 78400000*7;
+    var day2 = day1 - 78400000*7;
 
     cunli.forEach(function (value) {
         var key = value.getProperty('VILLAGE_ID'),
                 count = 0;
+	var count1=0, count2=0;
 
         if (DengueTW[key]) {
             DengueTW[key].forEach(function (val) {
-                var diff = clickedDate.getTime() - new Date(val[0]).getTime();
-		if( diff < days && diff >= 0)
-	        {
-                    count += val[1];
-      		}
+                var recdate = new Date(val[0]).getTime();
+		if( recdate > day0 )
+		{
+		}
+		else if( recdate > day1 )
+                {
+                    count1 += val[1];
+                }
+		else if( recdate > day2 )
+		{
+                    count2 += val[1];
+		}
             });
         }
-        value.setProperty('num', count);
+        value.setProperty('num', count1 - count2); 
+	value.setProperty('sum', count1 + count2); 
+
     });
     $('#title').html(clickedDateKey + ' 累積病例');
 }
